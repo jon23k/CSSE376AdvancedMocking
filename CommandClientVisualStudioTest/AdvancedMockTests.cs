@@ -102,7 +102,38 @@ namespace CommandClientVisualStudioTest
         [TestMethod]
         public void TestSemaphoreReleaseOnNormalOperation()
         {
-            Assert.Fail("Not yet implemented");
+            System.Threading.Semaphore fakeSemaphore = mocks.DynamicMock<System.Threading.Semaphore>(1, 1);
+            IPAddress ipaddress = IPAddress.Parse("127.0.0.1");
+            Command command = new Command(CommandType.UserExit, ipaddress, null);
+            System.IO.Stream fakeStream = mocks.DynamicMock<System.IO.Stream>();
+            byte[] commandBytes = { 0, 0, 0, 0 };
+            byte[] ipLength = { 9, 0, 0, 0 };
+            byte[] ip = { 49, 50, 55, 46, 48, 46, 48, 46, 49 };
+            byte[] metaDataLength = { 2, 0, 0, 0 };
+            byte[] metaData = { 10, 0 };
+
+            using (mocks.Ordered())
+            {
+                try
+                {
+                    fakeStream.Write(commandBytes, 0, 4);
+                    fakeStream.Flush();
+                    fakeStream.Write(ipLength, 0, 4);
+                    fakeStream.Flush();
+                    fakeStream.Write(ip, 0, 9);
+                    fakeStream.Flush();
+                    fakeStream.Write(metaDataLength, 0, 4);
+                    fakeStream.Flush();
+                    fakeStream.Write(metaData, 0, 2);
+                    fakeStream.Flush();
+                    //within your mocks.Ordered block
+                    Expect.Call(fakeSemaphore.WaitOne()).Return(true);
+                }
+                finally
+                {
+                    fakeSemaphore.Release();
+                }
+            }
         }
 
         [TestMethod]
